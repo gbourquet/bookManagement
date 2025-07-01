@@ -30,7 +30,7 @@ class LibraryUseCasePropertyTest : StringSpec({
     "should return all elements in the alphabetical order" {
         bookRepository.clear()
         val titles = mutableListOf<String>()
-        checkAll(Arb.stringPattern("""[a-z]{1,10}""")) { title ->
+        checkAll(Arb.stringPattern("""[A-Za-z]{1,10}""")) { title ->
             titles.add(title)
             libraryUseCase.addBook(Book(title, "Isaac Asimov"))
         }
