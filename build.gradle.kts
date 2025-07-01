@@ -69,7 +69,7 @@ configure<PitestPluginExtension> {
 
 pitest {
 	targetClasses.add("com.gbourquet.library.*")
-	junit5PluginVersion = "1.0.0"
+	junit5PluginVersion.set("1.2.0")
 	avoidCallsTo.set(setOf("kotlin.jvm.internal"))
 	mutators.set(setOf("STRONGER"))
 	threads.set(2)
