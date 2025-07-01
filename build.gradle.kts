@@ -1,13 +1,13 @@
 import info.solidsoft.gradle.pitest.PitestPluginExtension
 
 plugins {
-	java
 	kotlin("jvm") version "1.9.25"
 	kotlin("plugin.spring") version "1.9.25"
 	id("org.springframework.boot") version "3.5.3"
 	id("io.spring.dependency-management") version "1.1.7"
 	id("jacoco")
-	id("info.solidsoft.pitest") version "1.15.0"
+	id("java")
+	id("info.solidsoft.pitest") version "1.19.0-rc.1"
 }
 
 group = "com.gbourquet"
@@ -72,7 +72,8 @@ pitest {
 	junit5PluginVersion = "1.0.0"
 	avoidCallsTo.set(setOf("kotlin.jvm.internal"))
 	mutators.set(setOf("STRONGER"))
-	threads.set(Runtime.getRuntime().availableProcessors())
+	threads.set(2)
+	jvmArgs.add("-Xmx1024m")
 	testSourceSets.addAll(sourceSets["test"])
 	mainSourceSets.addAll(sourceSets["main"])
 	outputFormats.addAll("XML", "HTML")
