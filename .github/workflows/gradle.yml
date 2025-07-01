@@ -3,8 +3,6 @@ name: CI with Gradle
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
 
 permissions:
   contents: read
@@ -40,6 +38,15 @@ jobs:
           check_name: Unit tests results
           files: |
             build/test-results/test/*.xml
+      - name: Integration test
+        run: ./gradlew testIntegration
+      - name: Publish Integration Test
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          check_name: Integration tests results
+          files: |
+            build/test-results/testIntegration/*.xml
       - name: Run Coverage
         run: ./gradlew jacocoFullReport
       - name: JaCoCo Code Coverage Report
