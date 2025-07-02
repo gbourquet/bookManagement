@@ -74,3 +74,12 @@ jobs:
           check_name: Component tests results
           files: |
             build/test-results/testComponent/*.xml
+      - name: Architecture test
+        run: ./gradlew testArchitecture
+      - name: Publish Architecture test
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        if: always()
+        with:
+          check_name: Architecture tests results
+          files: |
+            build/test-results/testArchitecture/*.xml
