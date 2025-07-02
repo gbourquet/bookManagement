@@ -1,13 +1,15 @@
 import info.solidsoft.gradle.pitest.PitestPluginExtension
+import io.gitlab.arturbosch.detekt.Detekt
 
 plugins {
-	kotlin("jvm") version "1.9.25"
-	kotlin("plugin.spring") version "1.9.25"
+	kotlin("jvm") version "2.0.21"
+	kotlin("plugin.spring") version "2.0.21"
 	id("org.springframework.boot") version "3.5.3"
 	id("io.spring.dependency-management") version "1.1.7"
 	id("jacoco")
 	id("java")
 	id("info.solidsoft.pitest") version "1.19.0-rc.1"
+	id("io.gitlab.arturbosch.detekt") version ("1.23.8")
 }
 
 group = "com.gbourquet"
@@ -161,4 +163,24 @@ pitest {
 	mainSourceSets.addAll(sourceSets["main"])
 	outputFormats.addAll("XML", "HTML")
 	excludedClasses.add("**LibraryApplication")
+}
+
+detekt {
+	toolVersion = "1.23.8"
+	config.setFrom("$projectDir/config/detekt.yml")
+	buildUponDefaultConfig = true
+	allRules = false
+	ignoreFailures = true
+	basePath = rootProject.projectDir.absolutePath
+}
+
+tasks.withType<Detekt>().configureEach {
+	basePath = rootProject.projectDir.absolutePath
+	reports {
+		xml.required.set(true)
+		html.required.set(true)
+		txt.required.set(true)
+		sarif.required.set(true)
+		md.required.set(true)
+	}
 }

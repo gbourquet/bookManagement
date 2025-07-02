@@ -29,6 +29,15 @@ jobs:
         run: chmod +x gradlew
       - name: Build
         run: ./gradlew bootJar
+      - name: Run detekt
+        run: ./gradlew detekt
+      - name: Publish detekt summary
+        run: cat build/reports/detekt/detekt.md >> $GITHUB_STEP_SUMMARY
+      - name: Upload SARIF to GitHub using the upload-sarif action
+        uses: github/codeql-action/upload-sarif@v3
+        if: success() || failure()
+        with:
+          sarif_file: build/reports/detekt/detekt.sarif
       - name: Unit test
         run: ./gradlew test
       - name: Publish Test
@@ -82,4 +91,4 @@ jobs:
         with:
           check_name: Architecture tests results
           files: |
-            build/test-results/testArchitecture/*.xml
+            build/test-results/testArchitectureÆ/*.xml
