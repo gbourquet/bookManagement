@@ -2,8 +2,10 @@ package com.gbourquet.library.domain.usecase
 
 import com.gbourquet.library.domain.model.Book
 import com.gbourquet.library.domain.port.BookRepositoryPort
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.StringSpec
 import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.shouldBe
 import io.mockk.every
 import io.mockk.justRun
 import io.mockk.mockk
@@ -16,9 +18,9 @@ class LibraryUseCaseTest : StringSpec({
     "getBooks returns sorted list of books" {
         // Arrange
         val books = listOf(
-            Book("Les robots", "Isaac Asimov"),
-            Book("Hypérion", "Dan Simons"),
-            Book("Axiomatique", "Greg Egan")
+            Book(1,"Les robots", "Isaac Asimov", false),
+            Book(2,"Hypérion", "Dan Simons", false),
+            Book(3,"Axiomatique", "Greg Egan", false)
         )
         every { bookRepository.getBooks() } returns books
 
@@ -27,20 +29,49 @@ class LibraryUseCaseTest : StringSpec({
 
         // Assert
         result shouldContainExactly listOf(
-            Book("Axiomatique", "Greg Egan"),
-            Book("Hypérion", "Dan Simons"),
-            Book("Les robots", "Isaac Asimov")
+            Book(3,"Axiomatique", "Greg Egan", false),
+            Book(2,"Hypérion", "Dan Simons", false),
+            Book(1,"Les robots", "Isaac Asimov", false)
         )
     }
 
     "addBook adds a book to the repository" {
         // Arrange
-        val book = Book("Les robots", "Isaac Asimov")
-        justRun { bookRepository.addBook(any()) }
+        val title = "Les robots"
+        val author = "Isaac Asimov"
+        every { bookRepository.addBook(any(), any()) } returns Book(1,title, author, false)
 
         // Act
-        libraryUseCase.addBook(book)
+        val book = libraryUseCase.addBook(title, author)
 
         // Assert
-        verify(exactly = 1) { bookRepository.addBook(book) }
-    }})
+        verify(exactly = 1) { bookRepository.addBook(title, author) }
+        book shouldBe Book(1, title, author, false)
+    }
+
+    "reserveBook reserve a book" {
+        // Arrange
+        val notReservedBook = Book(1, "Axiomatique", "Greg Egan", false)
+        val reservedBook = Book(1, "Axiomatique", "Greg Egan", true)
+        justRun {bookRepository.updateBook(any())}
+        every { bookRepository.getBook(any()) } returns notReservedBook
+
+        // Act
+        libraryUseCase.reserveBook(notReservedBook.id)
+
+        // Assert
+        verify(exactly = 1) {bookRepository.updateBook(reservedBook)}
+    }
+
+    "reserveBook throw an exception when trying to reserve an already reserved book" {
+        // Arrange
+        val alreadyReservedBook = Book(1, "Axiomatique", "Greg Egan", true)
+        every { bookRepository.getBook(any()) } returns alreadyReservedBook
+
+        // Act, Assert
+        shouldThrow<IllegalStateException> {libraryUseCase.reserveBook(alreadyReservedBook.id)}
+            .message shouldBe "Book already reserved"
+
+    }
+
+})

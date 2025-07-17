@@ -12,7 +12,9 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.test.context.ActiveProfiles
 import org.testcontainers.containers.PostgreSQLContainer
 import java.sql.ResultSet
@@ -22,11 +24,15 @@ import java.sql.ResultSet
 class BookDAOITest(
     private val bookDAO: BookDAO
 ) : StringSpec() {
+
+    @Autowired
+    private lateinit var jdbcTemplate: JdbcTemplate
+
     init {
         extension(SpringExtension)
 
         beforeTest {
-            performQuery(
+            jdbcTemplate.update (
                 // language=sql
                 "DELETE FROM book"
             )
@@ -34,14 +40,14 @@ class BookDAOITest(
 
         "get all books from db" {
             // GIVEN
-            performQuery(
+            jdbcTemplate.update(
                 // language=sql
                 """
-               insert into book (title, author)
+               insert into book (id, title, author, reserved)
                values 
-                   ('Hamlet', 'Shakespeare'),
-                   ('Les fleurs du mal', 'Beaudelaire'),
-                   ('Harry Potter', 'Rowling');
+                   (1, 'Hamlet', 'Shakespeare', false),
+                   (2, 'Les fleurs du mal', 'Beaudelaire', false),
+                   (3, 'Harry Potter', 'Rowling', true);
             """.trimIndent()
             )
 
@@ -50,28 +56,83 @@ class BookDAOITest(
 
             // THEN
             res.shouldContainExactlyInAnyOrder(
-                Book("Hamlet", "Shakespeare"), Book("Les fleurs du mal", "Beaudelaire"), Book("Harry Potter", "Rowling")
+                Book(1L,"Hamlet", "Shakespeare",false),
+                Book(2L,"Les fleurs du mal", "Beaudelaire", false),
+                Book(3L,"Harry Potter", "Rowling", true)
             )
+        }
+
+        "get one book from db" {
+            // GIVEN
+            jdbcTemplate.update(
+                // language=sql
+                """
+               insert into book (id, title, author, reserved)
+               values 
+                   (1, 'Hamlet', 'Shakespeare', false),
+                   (2, 'Les fleurs du mal', 'Beaudelaire', false),
+                   (3, 'Harry Potter', 'Rowling', true);
+            """.trimIndent()
+            )
+
+            // WHEN
+            val res = bookDAO.getBook(1)
+
+            // THEN
+            res shouldBe Book(1,"Hamlet", "Shakespeare",false)
         }
 
         "create book in db" {
             // GIVEN
-            val book = Book("Les misérables", "Victor Hugo")
+            val title = "Les misérables"
+            val author = "Victor Hugo"
 
             // WHEN
-            bookDAO.addBook(book)
+            bookDAO.addBook(title, author)
 
             // THEN
-            val res = performQuery(
-                // language=sql
-                "SELECT * from book"
-            )
+            val res =  jdbcTemplate.query(
+            // language=sql
+            "SELECT * from book"
+            ) { rs, rowNum -> rs.toMap() }
 
             res shouldHaveSize 1
             assertSoftly(res.first()) {
                 this["id"].shouldNotBeNull().shouldBeInstanceOf<Int>()
                 this["title"].shouldBe("Les misérables")
                 this["author"].shouldBe("Victor Hugo")
+                this["reserved"].shouldBe(false)
+            }
+        }
+
+        "update book in db" {
+            // GIVEN
+            jdbcTemplate.update(
+                // language=sql
+                """
+               insert into book (id, title, author, reserved)
+               values 
+                   (1, 'Hamlet', 'Shakespeare', false),
+                   (2, 'Les fleurs du mal', 'Beaudelaire', false),
+                   (3, 'Harry Potter', 'Rowling', false);
+            """.trimIndent()
+            )
+            val book = Book(1,"Hamlet", "Shakespeare",true)
+
+            // WHEN
+           bookDAO.updateBook(book)
+
+            // THEN
+            val res = jdbcTemplate.query(
+                // language=sql
+                "SELECT * from book WHERE id = 1"
+            ) { rs, rowNum -> rs.toMap()}
+
+            assertSoftly(res.first()) {
+                this["id"].shouldNotBeNull().shouldBeInstanceOf<Int>()
+                this["title"].shouldBe("Hamlet")
+                this["author"].shouldBe("Shakespeare")
+                this["reserved"].shouldBe(true)
             }
         }
 
@@ -90,33 +151,14 @@ class BookDAOITest(
             System.setProperty("spring.datasource.password", container.password)
         }
 
-        private fun ResultSet.toList(): List<Map<String, Any>> {
+        private fun ResultSet.toMap(): Map<String, Any> {
             val md = this.metaData
             val columns = md.columnCount
-            val rows: MutableList<Map<String, Any>> = ArrayList()
-            while (this.next()) {
-                val row: MutableMap<String, Any> = HashMap(columns)
-                for (i in 1..columns) {
-                    row[md.getColumnName(i)] = this.getObject(i)
-                }
-                rows.add(row)
+            val row: MutableMap<String, Any> = HashMap(columns)
+            for (i in 1..columns) {
+                row[md.getColumnName(i)] = this.getObject(i)
             }
-            return rows
-        }
-
-        fun performQuery(sql: String): List<Map<String, Any>> {
-            val hikariConfig = HikariConfig()
-            hikariConfig.setJdbcUrl(container.jdbcUrl)
-            hikariConfig.username = container.username
-            hikariConfig.password = container.password
-            hikariConfig.setDriverClassName(container.driverClassName)
-
-            val ds = HikariDataSource(hikariConfig)
-
-            val statement = ds.connection.createStatement()
-            statement.execute(sql)
-            val resultSet = statement.resultSet
-            return resultSet?.toList() ?: listOf()
+            return row
         }
     }
 }

@@ -5,11 +5,11 @@ import io.kotest.core.spec.style.StringSpec
 
 class BookTest : StringSpec({
     "name is mandatory" {
-        shouldThrow<IllegalArgumentException> { Book("", "Victor Hugo") }
+        shouldThrow<IllegalArgumentException> { Book(1L,"", "Victor Hugo", false) }
 
     }
 
     "author is mandatory" {
-        shouldThrow<IllegalArgumentException> { Book("Les robots", "") }
+        shouldThrow<IllegalArgumentException> { Book(1L,"Les robots", "", false) }
     }
 })

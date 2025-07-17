@@ -5,5 +5,6 @@
         xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.3.xsd">
 
     <include file="/db/changelogs/20250701114500_initial_schema.xml" />
+    <include file="/db/changelogs/20250703154500_add_reserved_field.xml" />
 
 </databaseChangeLog>

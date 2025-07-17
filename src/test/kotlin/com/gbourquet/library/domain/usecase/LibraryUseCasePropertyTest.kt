@@ -12,9 +12,16 @@ class InMemoryBookRepositoryPort : BookRepositoryPort {
     private val books = mutableListOf<Book>()
 
     override fun getBooks(): List<Book> = books
+    override fun getBook(bookId: Long): Book {
+        TODO("Not yet implemented")
+    }
 
-    override fun addBook(book: Book) {
-        books.add(book)
+    override fun updateBook(book: Book) {
+        TODO("Not yet implemented")
+    }
+
+    override fun addBook(title: String, author: String) : Book {
+        return Book(0, title, author, false).also { book -> books.add(book) }
     }
 
     fun clear() {
@@ -32,7 +39,7 @@ class LibraryUseCasePropertyTest : StringSpec({
         val titles = mutableListOf<String>()
         checkAll(Arb.stringPattern("""[A-Za-z]{1,10}""")) { title ->
             titles.add(title)
-            libraryUseCase.addBook(Book(title, "Isaac Asimov"))
+            libraryUseCase.addBook(title, "Isaac Asimov")
         }
 
         val res = libraryUseCase.getBooks()
